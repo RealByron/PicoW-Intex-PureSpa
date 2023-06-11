@@ -1,7 +1,7 @@
 # PicoW-Intex-PureSpa
 Intex PureSpa SBH20 control interface for esphome.
 
-Idea came from https://github.com/YorffoeG/diyscip and https://github.com/jnsbyr/esp8266-intexsbh20 for there great comprehension of PureSpa protocol.
+Idea came from https://github.com/YorffoeG/diyscip and https://github.com/jnsbyr/esp8266-intexsbh20 for their great comprehension of PureSpa protocol.
 Since many reports problems with controlling target temperature due to heavy processing in interrupts, I decide to give raspberry pi pico W a try.
 
 That's my very project first with :
