@@ -10,7 +10,7 @@ That's my very project first with :
 So please be indulgent, I've learnt a lot, but it's just a beginning.
 
 # Aspirin tube case !!
-![image](https://github.com/RealByron/PicoW-Intex-PureSpa/assets/1749192/d14167d3-178b-4e7f-a606-81c4ead0bfa8)
+![image](https://github.com/RealByron/PicoW-Intex-PureSpa/assets/1749192/8ec6f361-ab9b-407b-b083-84245200abdd)
 
 # Fully discoverable in Home assistant
 ![image](https://github.com/RealByron/PicoW-Intex-PureSpa/assets/1749192/d4230ada-e759-44a0-8b38-833575798f3a)
