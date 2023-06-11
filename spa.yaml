@@ -43,10 +43,13 @@ purespa:
     name: Temp
   power:
     name: Power
+    icon: mdi:power
   filter:
     name: Filter
+    icon: mdi:air-filter
   bubble:
     name: Bubble
+    icon: mdi:chart-bubble
   error_text:
     name: Error    
 
