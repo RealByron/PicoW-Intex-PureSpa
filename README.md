@@ -7,6 +7,7 @@ Since many reports problems with controlling target temperature due to heavy pro
 That's my very project first with :
 - Raspberry Pi Pico W
 - esphome
+
 So please be indulgent, I've learnt a lot, but it's just a beginning.
 
 # Aspirin tube case !!
@@ -40,10 +41,10 @@ Schematics to come... If you know how to connect level shifters, you just need t
 
 Mostly GPIO just read data bit on clock rising edge.
 When ISR is full of 16 bits, then store that value on Y register.
-ISR is also push to FIFO and an IRQ is fired.
+ISR is also pushed to FIFO and an IRQ is fired.
 Then C program have time to proces all these words in FIFO and decodes leds and digits.
 
-For push button, a function put expect push button code in FIFO and the PIO program loads it in X register.
+For push button, a function put expected push button code in FIFO and the PIO program loads it in X register.
 
 When X and Y are equal, a pulse is done on DATA line (4µs after CS rising edge and during 2 µs)
 
