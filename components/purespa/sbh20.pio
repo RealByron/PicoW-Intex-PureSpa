@@ -1,0 +1,47 @@
+
+
+.program sbh20
+.side_set 1 opt
+.wrap_target
+start:
+    wait 1 pin 2   side 0 ; CS High
+    wait 0 pin 2            ; CS low
+    set y, 15       
+    
+loop:
+    wait 0 pin 1    ; CLK low
+    wait 1 pin 1    ; CLK High
+    in pins, 1      ; DATA pin to ISR  
+    jmp y-- loop  
+
+    ; ISR is filled with 16 bits, 
+    ; Store it to Y to prepare comparison to X
+    mov y, isr
+    push noblock
+    IRQ set 0
+
+    jmp x != y start ; bp X ?
+
+    wait 1 pin 2  
+
+    set pindirs, 1  side 1  ; DATA as output
+
+    wait 0 pin 2  
+
+    set pindirs, 0  side 0  ; DATA as input
+
+    jmp start
+  
+public set_x:
+    set pindirs, 0
+    pull            
+    mov x, osr
+
+    ; cleanup ISR register
+    mov isr, null
+    push noblock
+    IRQ set 0
+
+.wrap
+
+

@@ -1,0 +1,52 @@
+esphome:
+  name: spa
+  friendly_name: Spa
+
+rp2040:
+  board: rpipicow
+  framework:
+    # Required until https://github.com/platformio/platform-raspberrypi/pull/36 is merged
+    platform_version: https://github.com/maxgerhardt/platform-raspberrypi.git
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "UvL5ol83NZ6/Ek0/e6jtmrlNGhOTGOGenoN7O508Bjw="
+
+ota:
+  password: "8596289a4988fba7e1e62f0f48441277"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot in case wifi connection fails
+  ap:
+    ssid: "Spa Fallback Hotspot"
+    password: "ys3Za1z3eOIR"
+
+
+external_components:
+  - source: ./components
+    components: [purespa]
+
+
+climate:
+switch:
+text_sensor:
+
+purespa:
+  climate:
+    name: Temp
+  power:
+    name: Power
+  filter:
+    name: Filter
+  bubble:
+    name: Bubble
+  error_text:
+    name: Error    
+
