@@ -39,9 +39,9 @@ Schematics to come... If you know how to connect level shifters, you just need t
 ![image](https://github.com/RealByron/PicoW-Intex-PureSpa/assets/1749192/0cf17844-4127-45b0-a2fc-9e69e141ccc2)
 
 Mostly GPIO just read data bit on clock rising edge.
-When ISR is full of 16 bits, when store that value on Y register.
+When ISR is full of 16 bits, then store that value on Y register.
 ISR is also push to FIFO and an IRQ is fired.
-Then C program have time to proces all these byte in FIFO and decodes leds and digits.
+Then C program have time to proces all these words in FIFO and decodes leds and digits.
 
 For push button, a function put expect push button code in FIFO and the PIO program loads it in X register.
 
