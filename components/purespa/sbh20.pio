@@ -5,7 +5,7 @@
 .wrap_target
 start:
     wait 1 pin 2   side 0 ; CS High
-    wait 0 pin 2            ; CS low
+    wait 0 pin 2    ; CS low
     set y, 15       
     
 loop:
@@ -24,9 +24,18 @@ loop:
 
     wait 1 pin 2  
 
-    set pindirs, 1  side 1  ; DATA as output
+    set y, 31       ; rougthly 4 µs
+loop2:              
+    nop[7]    
+    nop[5]
+    jmp y-- loop2
 
-    wait 0 pin 2  
+    set pindirs, 1   side 1   ; DATA as output
+
+    set y, 31       ; rougthly 2 µs
+loop3:      
+    nop[6]    
+    jmp y-- loop3
 
     set pindirs, 0  side 0  ; DATA as input
 
