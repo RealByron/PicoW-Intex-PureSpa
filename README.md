@@ -29,12 +29,15 @@ Hardware is very simple :
 
 ![image](https://github.com/RealByron/PicoW-Intex-PureSpa/assets/1749192/89278776-472c-42b0-af2c-f625bd6158a3)
 
-Schematics to come... If you know how to connect level shifters, you just need to connect :
+If you know how to connect level shifters, you just need to connect :
 - DATA (3.3V) on GP3
 - CLK (3.3V) on GP4
-- CS (3.3V) on GP5
+- HOLD (3.3V) on GP5
 
-(see BASE_PIN in components/purespa/purespa_ctrl.cpp)
+![image](https://github.com/RealByron/PicoW-Intex-PureSpa/assets/1749192/712beda6-1c15-4406-8648-f406952de39d)
+![image](https://github.com/RealByron/PicoW-Intex-PureSpa/assets/1749192/086b608e-5e62-42fe-aa9c-cd78b8a11c70)
+
+Credits : https://github.com/YorffoeG/diyscip/blob/master/docs/connector%20pinout.png
 
 # PIO program
 ![image](https://github.com/RealByron/PicoW-Intex-PureSpa/assets/1749192/0cf17844-4127-45b0-a2fc-9e69e141ccc2)
