@@ -17,8 +17,6 @@ static const char *const TAG = "SBH20";
 
 #define PRESS_DURATION 100
 
-#define abs(x) (((x) > 0) ? (x) : -(x))
-
 PIO pio = pio0;
 uint offset;
 uint sm;
@@ -150,7 +148,7 @@ void sbh20_program_init(PIO pio, uint sm, uint offset, uint pin) {
 }
 
 // Definitions
-#define MAX_COUNT 200
+#define MAX_COUNT 150
 
 #define DIGITS_SIZE 4
 #define DIGIT_POS_MASK 0x0864
@@ -195,10 +193,13 @@ uint8_t convert_to_decimal(uint16_t value) {
 }
 
 bool decode_display(uint16_t value) {
-  static uint16_t rawDisplay = 0;
-  static uint8_t instantTemp = 0;
-  static uint8_t lastTemp = 0;
+  static uint16_t raw_display = 0;
+  static uint16_t last_display = 0;
+  static uint8_t instant_temp = 0;
+  static uint8_t last_temp = 0;
+  static uint8_t blink_temp = 0;
   static uint16_t count = 0;
+  static bool blinking = false;
 
   if (!(value & DIGIT_POS_MASK))
     return false;
@@ -206,9 +207,9 @@ bool decode_display(uint16_t value) {
   for (int i = 0; i < DIGITS_SIZE; i++) {
     if ((value & DIGIT_POS_MASK) == digitPos[i]) {
       if (i == 0)
-        rawDisplay = 0;
+        raw_display = 0;
 
-      rawDisplay |= bcd_to_decimal_digit(value) << (4 * (3 - i));
+      raw_display |= bcd_to_decimal_digit(value) << (4 * (3 - i));
 
       if (i != 3)
         return true;
@@ -216,40 +217,41 @@ bool decode_display(uint16_t value) {
   }
 
   // full display
-  if (rawDisplay >> 4 == 0xBBB)  // Blank
-  {
+  if (last_display != raw_display) {
+    // ESP_LOGD("PIO", "\tDisplay %04x [%d] => %04x", last_display, count, raw_display);
+    last_display = raw_display;
     count = 0;
-    if (status.target_temperature != instantTemp) {
-      status.target_temperature = instantTemp;
-      ESP_LOGD("PIO", "Setpoint: \t%d", status.target_temperature);
-    }
-  } else if (rawDisplay >> 12 == 0xE)  // Error
-  {
-    uint8_t error = convert_to_decimal(rawDisplay & 0xFFF);
+  }
+
+  if (raw_display >> 4 == 0xBBB) {  // Blank
+    blinking = true;
+    blink_temp = instant_temp;
+  } else if (raw_display >> 12 == 0xE) {  // Error
+    uint8_t error = convert_to_decimal(raw_display & 0xFFF);
     if (status.error != error) {
       status.error = error;
       ESP_LOGD(TAG, "\tError: \t%d\n", status.error);
     }
-  } else  // Temp
-  {
-    instantTemp = convert_to_decimal(rawDisplay);
+  } else {  // Temp
+    instant_temp = convert_to_decimal(raw_display);
 
-    if (instantTemp != lastTemp) {
-      // Quick update during blinking
-      // absolute diff avoid to set the setpoint to ambiante temp at the end of blinking
-      // in any case last real setpoint have been set at last blank display
-      if (abs(status.target_temperature - instantTemp) == 1) {
-        status.target_temperature = instantTemp;
-        ESP_LOGD("PIO", "\tSetpoint: \t%d", status.target_temperature);
+    if (instant_temp != last_temp) {
+      if (blinking && status.target_temperature != instant_temp) {
+        status.target_temperature = instant_temp;
+        ESP_LOGD("PIO", "Setpoint: \t%d", status.target_temperature);
       }
-      lastTemp = instantTemp;
-      count = 0;
+      last_temp = instant_temp;
     } else {
       if (count < MAX_COUNT) {
         count++;
         if (count == MAX_COUNT) {
-          if (status.current_temperature != instantTemp) {
-            status.current_temperature = instantTemp;
+          if (status.target_temperature != blink_temp) {
+            status.target_temperature = blink_temp;
+            ESP_LOGD("PIO", "Setpoint: \t%d", status.target_temperature);
+            blinking = false;
+          }
+          if (status.current_temperature != instant_temp) {
+            status.current_temperature = instant_temp;
             ESP_LOGD("PIO", "\tTemperature: \t%d\n", status.current_temperature);
           }
         }
