@@ -10,6 +10,7 @@ rp2040:
 
 # Enable logging
 logger:
+  level: INFO
 
 # Enable Home Assistant API
 api:
@@ -33,7 +34,6 @@ external_components:
   - source: ./components
     components: [purespa]
 
-
 climate:
 switch:
 text_sensor:
@@ -52,4 +52,3 @@ purespa:
     icon: mdi:chart-bubble
   error_text:
     name: Error    
-

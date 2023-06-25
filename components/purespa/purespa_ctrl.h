@@ -79,10 +79,10 @@ const Control def[] = {
 };
 
 typedef struct {
-  uint8_t current_temperature;
-  uint8_t target_temperature;
-  uint8_t error;
-  uint16_t leds;
+  volatile uint8_t current_temperature;
+  volatile uint8_t target_temperature;
+  volatile uint8_t error;
+  volatile uint16_t leds;
 } SystemStatus;
 
 namespace esphome {
@@ -91,6 +91,7 @@ namespace purespa {
 class SBH20 {
  public:
   void setup();
+  bool loop();
 
   SystemStatus get_status();
   void set_target_temperature(uint8_t temp);

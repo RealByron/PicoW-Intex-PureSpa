@@ -22,11 +22,21 @@ uint offset;
 uint sm;
 
 SystemStatus status;
+volatile uint8_t setpoint = 0;
+volatile uint8_t blink_count = 0;
 
 void IRQ_handler();
 void sbh20_program_init(PIO pio, uint sm, uint offset, uint pin);
 void short_press(uint8_t pb, uint16_t duration);
 void pb_press(uint8_t bp);
+
+uint32_t elapsed() {
+  static uint32_t before = millis();
+  uint32_t now = millis();
+  uint32_t elapsed = now - before;
+  before = now;
+  return elapsed;
+}
 
 void SBH20::setup() {
   pio = pio0;
@@ -42,6 +52,7 @@ void SBH20::setup() {
   sbh20_program_init(pio, sm, offset, BASE_PIN);
 
   delay(1000);
+
   if (!(status.leds & LED(POWER))) {
     short_press(POWER, 1000);
   }
@@ -50,48 +61,52 @@ void SBH20::setup() {
   }
 }
 
-void pb_press(uint8_t pb) {
-  ESP_LOGD("SBH20", "PB pressed %s", NAME(pb));
-  pio_sm_put_blocking(pio, sm, (uint16_t) ~PB(pb));
-  pio_sm_exec(pio, sm, pio_encode_jmp(offset + sbh20_offset_set_x));
-}
+bool SBH20::loop() {
+  uint8_t current_setpoint = status.target_temperature;
+  uint16_t pb;
+  uint32_t now;
+  static uint8_t last_setpoint = 0;
 
-void short_press(uint8_t pb, uint16_t duration) {
-  ESP_LOGD("SBH20", "Short PB %s", NAME(pb), duration);
+  if (setpoint == 0 || !(status.leds & LED(POWER)))
+    return true;
 
+  if (setpoint == current_setpoint) {
+    ESP_LOGI("SBH20", "Target temp %d reached {%d}", status.target_temperature, elapsed());
+    pb_press(RELEASE);
+    setpoint = 0;
+    blink_count = 10;
+
+    return true;
+  }
+
+  if (last_setpoint == setpoint)
+    // Setpint not reached yet
+    // nothing to do expect avoid component calls
+    return false;
+
+  pb = (setpoint > current_setpoint) ? UP : DOWN;
+
+  if (blink_count == 0) {
+    ESP_LOGD("PIO", "Wait blink {%d}", elapsed());
+    short_press(pb, PRESS_DURATION);
+    now = millis();
+    while (((millis() - now) < 400) && blink_count == 0) {
+    }
+    ESP_LOGD("PIO", "Blinking {%d}", elapsed());
+  }
+
+  ESP_LOGD("PIO", "Target %d != %d: Push %s {%d}", setpoint, status.target_temperature, NAME(pb), elapsed());
+  blink_count = 1;
   pb_press(pb);
-  delay(duration);
-  pb_press(RELEASE);
-  delay(200);
+
+  last_setpoint = setpoint;
+  return false;
 }
 
 void SBH20::set_target_temperature(uint8_t temp) {
-  if (status.leds & LED(POWER)) {
-    ESP_LOGD("SBH20", "Expected target temperature %d", temp);
-    while (true) {
-      if (temp > status.target_temperature) {
-        ESP_LOGD("SBH20", "Target temp %d => %d", status.target_temperature, temp);
-        pb_press(UP);
-        while (temp > status.target_temperature) {
-          delay(10);
-        }
-        pb_press(RELEASE);
-      }
-
-      if (temp < status.target_temperature) {
-        ESP_LOGD("SBH20", "Target temp %d => %d", status.target_temperature, temp);
-        pb_press(DOWN);
-        while (temp < status.target_temperature) {
-          delay(10);
-        }
-        pb_press(RELEASE);
-      }
-      ESP_LOGD("SBH20", "Target temp %d reached", status.target_temperature);
-      if (temp == status.target_temperature) {
-        temp = 0;
-        break;
-      }
-    }
+  if (temp >= 20 && temp <= 40) {
+    ESP_LOGI("SBH20", "Set target to %d  {%d}", temp, elapsed());
+    setpoint = temp;
   }
 }
 
@@ -111,6 +126,21 @@ void SBH20::set_state(uint8_t led, bool state) {
 
 SystemStatus SBH20::get_status() { return status; }
 uint8_t SBH20::getErrorValue() const { return status.error; }
+
+void pb_press(uint8_t pb) {
+  ESP_LOGVV("SBH20", "PB pressed %s", NAME(pb));
+  pio_sm_put_blocking(pio, sm, (uint16_t) ~PB(pb));
+  pio_sm_exec(pio, sm, pio_encode_jmp(offset + sbh20_offset_set_x));
+}
+
+void short_press(uint8_t pb, uint16_t duration) {
+  ESP_LOGV("SBH20", "Short PB %s", NAME(pb), duration);
+
+  pb_press(pb);
+  delay(duration);
+  pb_press(RELEASE);
+  delay(PRESS_DURATION);
+}
 
 void sbh20_program_init(PIO pio, uint sm, uint offset, uint pin) {
   uint data_pin = pin;
@@ -173,7 +203,7 @@ const struct {
                        {0xD, 0b0001011010010000}, {0xE, 0b0010010010011000},
                        {0xF, 0b0010000010011000}, {0xB, 0b0000000000000000}};  // use 0xB for Blank digit
 
-uint8_t bcd_to_decimal_digit(uint16_t value) {
+uint8_t bcd_to_digit(uint16_t value) {
   for (int i = 0; i < NB_DIGITS; i++) {
     if (digits[i].bin == (value & DIGITS)) {
       return digits[i].value;
@@ -196,10 +226,7 @@ bool decode_display(uint16_t value) {
   static uint16_t raw_display = 0;
   static uint16_t last_display = 0;
   static uint8_t instant_temp = 0;
-  static uint8_t last_temp = 0;
-  static uint8_t blink_temp = 0;
   static uint16_t count = 0;
-  static bool blinking = false;
 
   if (!(value & DIGIT_POS_MASK))
     return false;
@@ -209,7 +236,7 @@ bool decode_display(uint16_t value) {
       if (i == 0)
         raw_display = 0;
 
-      raw_display |= bcd_to_decimal_digit(value) << (4 * (3 - i));
+      raw_display |= bcd_to_digit(value) << (4 * (3 - i));
 
       if (i != 3)
         return true;
@@ -218,43 +245,41 @@ bool decode_display(uint16_t value) {
 
   // full display
   if (last_display != raw_display) {
-    // ESP_LOGD("PIO", "\tDisplay %04x [%d] => %04x", last_display, count, raw_display);
     last_display = raw_display;
     count = 0;
   }
 
-  if (raw_display >> 4 == 0xBBB) {  // Blank
-    blinking = true;
-    blink_temp = instant_temp;
-  } else if (raw_display >> 12 == 0xE) {  // Error
-    uint8_t error = convert_to_decimal(raw_display & 0xFFF);
-    if (status.error != error) {
-      status.error = error;
-      ESP_LOGD(TAG, "\tError: \t%d\n", status.error);
-    }
-  } else {  // Temp
-    instant_temp = convert_to_decimal(raw_display);
+  if (count < MAX_COUNT) {
+    count++;
+    if (count == 2) {
+      ESP_LOGVV("PIO", "Display %d [%d] %04x %d {%d}", instant_temp, count, raw_display, blink_count, elapsed());
 
-    if (instant_temp != last_temp) {
-      if (blinking && status.target_temperature != instant_temp) {
-        status.target_temperature = instant_temp;
-        ESP_LOGD("PIO", "Setpoint: \t%d", status.target_temperature);
-      }
-      last_temp = instant_temp;
-    } else {
-      if (count < MAX_COUNT) {
-        count++;
-        if (count == MAX_COUNT) {
-          if (status.target_temperature != blink_temp) {
-            status.target_temperature = blink_temp;
-            ESP_LOGD("PIO", "Setpoint: \t%d", status.target_temperature);
-            blinking = false;
-          }
-          if (status.current_temperature != instant_temp) {
-            status.current_temperature = instant_temp;
-            ESP_LOGD("PIO", "\tTemperature: \t%d\n", status.current_temperature);
+      if (raw_display >> 4 == 0xBBB) {         // Blank
+        blink_count++;
+      } else if (raw_display >> 16 == 0xE9) {  // Error
+        uint8_t error = convert_to_decimal(raw_display & 0xFFF);
+        if (status.error != error) {
+          status.error = error;
+          ESP_LOGI(TAG, "\tError: %d", status.error);
+        }
+      } else {  // Temp
+        instant_temp = convert_to_decimal(raw_display);
+        if (instant_temp != status.target_temperature) {
+          if (blink_count && blink_count < 5) {
+            ESP_LOGI("PIO", "\tCurrent Target: %d {%d}", instant_temp, elapsed());
+            status.target_temperature = instant_temp;
+            blink_count = 1;
           }
         }
+      }
+    } else if (count == MAX_COUNT) {
+      if (instant_temp != status.current_temperature) {
+        status.current_temperature = instant_temp;
+        ESP_LOGI("PIO", "\tCurrent Temperature: %d {%d}", status.current_temperature, elapsed());
+      }
+      if (blink_count) {
+        ESP_LOGI("PIO", "End of blink {%d}", elapsed());
+        blink_count = 0;
       }
     }
   }

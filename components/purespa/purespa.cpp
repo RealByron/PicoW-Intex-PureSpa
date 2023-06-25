@@ -12,6 +12,12 @@ void PureSpa::setup() { sbh_.setup(); }
 void PureSpa::loop() {
   bool climate_flag = false;
 
+  if (!sbh_.loop())
+    // target temperature not reached,
+    // don't call other component treatment to avoid publication
+    // during taget temperature setup
+    return;
+
   SystemStatus state = sbh_.get_status();
 
   if (prev_state.target_temperature != state.target_temperature) {
