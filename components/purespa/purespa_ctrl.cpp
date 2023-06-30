@@ -12,7 +12,7 @@ static const char *const TAG = "SBH20";
 
 #define BASE_PIN 3
 
-#define DEBUG_LOW_LEVEL_SPA
+// #define DEBUG_LOW_LEVEL_SPA
 #define DEBUG_PIN 6
 
 #define PRESS_DURATION 100
@@ -43,12 +43,11 @@ void SBH20::setup() {
   offset = pio_add_program(pio, &sbh20_program);
   sm = pio_claim_unused_sm(pio, true);
 
-  gpio_init(7);
-  gpio_set_dir(7, true);
-  gpio_put(7, true);
-
+#ifdef DEBUG_LOW_LEVEL_SPA
   gpio_init(DEBUG_PIN);
   gpio_set_dir(DEBUG_PIN, true);
+#endif
+
   sbh20_program_init(pio, sm, offset, BASE_PIN);
 
   delay(1000);
@@ -112,6 +111,8 @@ void SBH20::set_target_temperature(uint8_t temp) {
 
 bool get_state(uint16_t led) { return (bool) (status.leds & led); }
 void SBH20::set_state(uint8_t led, bool state) {
+  ESP_LOGI("PIO", "Set state %d %s", led, state ? "On" : "Off");
+
   switch (led) {
     case HEATER:
       if ((bool) (status.leds & (LED(HEATER) | LED(STANDBY))) != state)
@@ -139,7 +140,6 @@ void short_press(uint8_t pb, uint16_t duration) {
   pb_press(pb);
   delay(duration);
   pb_press(RELEASE);
-  delay(PRESS_DURATION);
 }
 
 void sbh20_program_init(PIO pio, uint sm, uint offset, uint pin) {
@@ -251,8 +251,8 @@ bool decode_display(uint16_t value) {
 
   if (count < MAX_COUNT) {
     count++;
-    if (count == 2) {
-      ESP_LOGVV("PIO", "Display %d [%d] %04x %d {%d}", instant_temp, count, raw_display, blink_count, elapsed());
+    if (count == 3) {
+      ESP_LOGD("PIO", "\tDisplay %04x %d {%d}", raw_display, blink_count, elapsed());
 
       if (raw_display >> 4 == 0xBBB) {         // Blank
         blink_count++;
@@ -300,17 +300,16 @@ void IRQ_handler() {
 
   if (pio_interrupt_get(pio, 0)) {
     while (!pio_sm_is_rx_fifo_empty(pio, sm)) {
-      value = pio_sm_get_blocking(pio, sm);
+      value = pio_sm_get(pio, sm);
       if (value != 0) {
-        gpio_put(7, true);
         value = ~value & 0xFFFF;
         if (decode_display(value) || process_leds(value)) {
+          // nothing to do
         }
-        gpio_put(7, false);
       }
     }
-    pio_interrupt_clear(pio, 0);
   }
+  pio_interrupt_clear(pio, 0);
 }
 
 }  // namespace purespa

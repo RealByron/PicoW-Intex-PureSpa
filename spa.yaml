@@ -34,10 +34,6 @@ external_components:
   - source: ./components
     components: [purespa]
 
-climate:
-switch:
-text_sensor:
-
 purespa:
   climate:
     name: Temp
@@ -52,3 +48,7 @@ purespa:
     icon: mdi:chart-bubble
   error_text:
     name: Error    
+
+climate:
+text_sensor:
+switch:
