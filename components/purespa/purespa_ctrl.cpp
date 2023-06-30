@@ -61,44 +61,40 @@ void SBH20::setup() {
 }
 
 bool SBH20::loop() {
-  uint8_t current_setpoint = status.target_temperature;
-  uint16_t pb;
-  uint32_t now;
-  static uint8_t last_setpoint = 0;
+  static uint16_t pb_action = RELEASE;
+  uint8_t target = status.target_temperature;
 
   if (setpoint == 0 || !(status.leds & LED(POWER)))
     return true;
 
-  if (setpoint == current_setpoint) {
-    ESP_LOGI("SBH20", "Target temp %d reached {%d}", status.target_temperature, elapsed());
-    pb_press(RELEASE);
-    setpoint = 0;
-    blink_count = 10;
+  uint16_t pb = (setpoint == target) ? RELEASE : (setpoint > target) ? UP : DOWN;
 
-    return true;
-  }
-
-  if (last_setpoint == setpoint)
-    // Setpint not reached yet
-    // nothing to do expect avoid component calls
-    return false;
-
-  pb = (setpoint > current_setpoint) ? UP : DOWN;
-
-  if (blink_count == 0) {
+  if (blink_count == 0 && pb != RELEASE) {
     ESP_LOGD("PIO", "Wait blink {%d}", elapsed());
     short_press(pb, PRESS_DURATION);
-    now = millis();
+    uint32_t now = millis();
     while (((millis() - now) < 400) && blink_count == 0) {
     }
     ESP_LOGD("PIO", "Blinking {%d}", elapsed());
   }
 
-  ESP_LOGD("PIO", "Target %d != %d: Push %s {%d}", setpoint, status.target_temperature, NAME(pb), elapsed());
-  blink_count = 1;
-  pb_press(pb);
+  if (pb == pb_action)
+    // Setpint not reached yet
+    // nothing to do expect avoid component calls
+    return false;
 
-  last_setpoint = setpoint;
+  pb_press(pb);
+  pb_action = pb;
+
+  if (setpoint != target) {
+    ESP_LOGD("PIO", "Target %d != %d: Push %s {%d}", setpoint, target, NAME(pb), elapsed());
+    blink_count = 1;
+  } else {
+    ESP_LOGI("SBH20", "Target temp %d reached {%d}", target, elapsed());
+    setpoint = 0;
+    blink_count = 10;
+  }
+
   return false;
 }
 
