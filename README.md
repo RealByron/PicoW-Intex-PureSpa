@@ -34,7 +34,7 @@ If you know how to connect level shifters, you just need to connect :
 - CLK (3.3V) on GP4
 - HOLD (3.3V) on GP5
 
-![image](https://github.com/RealByron/PicoW-Intex-PureSpa/assets/1749192/c63af9a9-f848-4848-b8d3-af1a601fe964)
+![245259164-c63af9a9-f848-4848-b8d3-af1a601fe964](https://github.com/RealByron/PicoW-Intex-PureSpa/assets/1749192/d758ca06-3f4a-4b0d-b52f-cb86b6ce48c0)
 ![image](https://github.com/RealByron/PicoW-Intex-PureSpa/assets/1749192/086b608e-5e62-42fe-aa9c-cd78b8a11c70)
 
 Credits : https://github.com/YorffoeG/diyscip/blob/master/docs/connector%20pinout.png
