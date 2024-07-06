@@ -21,11 +21,11 @@ void PureSpa::loop() {
 
   SystemStatus status = sbh_.get_status();
 
-  switch_bubble_->publish_state((bool) (status.leds & LED(BUBBLE)));
-  switch_power_->publish_state((bool) (status.leds & LED(POWER)));
-  switch_filter_->publish_state((bool) (status.leds & LED(FILTER)));
+  if (memcmp(&status, &last_status, sizeof(SystemStatus))) {
+    switch_bubble_->publish_state((bool) (status.leds & LED(BUBBLE)));
+    switch_power_->publish_state((bool) (status.leds & LED(POWER)));
+    switch_filter_->publish_state((bool) (status.leds & LED(FILTER)));
 
-  if (memcmp(&status, &last_status, sizeof(&status))) {
     ESP_LOGI("PureSpa", "Status: %d %d %04x", status.current_temperature, status.target_temperature, status.leds);
     climate_->current_temperature = status.current_temperature;
     climate_->target_temperature = status.target_temperature;
@@ -40,8 +40,8 @@ void PureSpa::loop() {
       climate_->mode = esphome::climate::CLIMATE_MODE_OFF;
     }
     climate_->publish_state();
+    last_status = status;
   }
-  last_status = status;
 }
 
 }  // namespace purespa
