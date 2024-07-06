@@ -14,7 +14,7 @@ So please be indulgent, I've learnt a lot, but it's just a beginning.
 ![image](https://github.com/RealByron/PicoW-Intex-PureSpa/assets/1749192/8ec6f361-ab9b-407b-b083-84245200abdd)
 
 # Fully discoverable in Home assistant
-![image](https://github.com/RealByron/PicoW-Intex-PureSpa/assets/1749192/d4230ada-e759-44a0-8b38-833575798f3a)
+![image](https://github.com/RealByron/PicoW-Intex-PureSpa/assets/1749192/d7c6fecb-88e9-4a62-b593-ee8090b1208b)
 
 # Electronics
 Don't blame me, it's not my professional activity !!!
