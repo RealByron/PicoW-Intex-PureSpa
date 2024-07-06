@@ -51,6 +51,31 @@ For push button, a function put expected push button code in FIFO and the PIO pr
 
 When X and Y are equal, a pulse is done on DATA line (4µs after CS rising edge and during 2 µs)
 
+# Installation 
+
+I'm using WSL Ubuntu on windows 11.
+Go to your favourite dev directory then `git clone` this repository
+
+```
+git clone https://github.com/RealByron/PicoW-Intex-PureSpa.git PicowSpa
+cd PicowSpa
+```
+enable virtual env and activate it
+```
+python -m venv spa-env
+source spa-env/bin/activate
+```
+install esphome
+```
+pip install wheel
+pip install esphome
+```
+and execute it
+```
+esphome dashboard .
+```
+Then you're at (esp)home
+
 # Contributing
 Contributions to this project are welcome. If you find any issues or have suggestions for improvements, please open an issue or submit a pull request.
 
