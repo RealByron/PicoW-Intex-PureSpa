@@ -21,16 +21,16 @@ PureSpaSwitch = sbh_ns.class_('PureSpaSwitch', switch.Switch)
 
 CONFIG_SCHEMA = cv.COMPONENT_SCHEMA.extend({
 	cv.GenerateID(): cv.declare_id(PureSpa),
-	cv.Optional(CONF_CLIMATE): climate.CLIMATE_SCHEMA.extend({
+	cv.Optional(CONF_CLIMATE): climate.climate_schema(PureSpaClimate).extend({
 		cv.GenerateID(): cv.declare_id(PureSpaClimate),
 	}),
-	cv.Optional(CONF_POWER): switch.SWITCH_SCHEMA.extend({
+	cv.Optional(CONF_POWER): switch.switch_schema(PureSpaSwitch).extend({
 		cv.GenerateID(): cv.declare_id(PureSpaSwitch),
 	}),
-	cv.Optional(CONF_FILTER): switch.SWITCH_SCHEMA.extend({
+	cv.Optional(CONF_FILTER): switch.switch_schema(PureSpaSwitch).extend({
 		cv.GenerateID(): cv.declare_id(PureSpaSwitch),
 	}),
-	cv.Optional(CONF_BUBBLE): switch.SWITCH_SCHEMA.extend({
+	cv.Optional(CONF_BUBBLE): switch.switch_schema(PureSpaSwitch).extend({
 		cv.GenerateID(): cv.declare_id(PureSpaSwitch),
 	}),
 	cv.Optional(CONF_ERROR_TEXT): text_sensor.text_sensor_schema().extend(),
